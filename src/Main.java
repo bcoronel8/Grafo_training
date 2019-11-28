@@ -81,10 +81,11 @@ public class Main {
 		grafito.agregarAristaLst(new Arista(7, 8, 0));
 		grafito.agregarAristaLst(new Arista(10, 11, 0));
 
-		Integer[] arrayHops = grafito.recorrido_BFS(1);
-		for (int i = 1; i < arrayHops.length; i++)
-			System.out.println(" i " + i + "  Valor " + arrayHops[i]);
-//		}
+		// grafito.recorrido_DFS(1);
+//		Integer[] arrayHops = grafito.recorrido_BFS(1);
+//		for (int i = 1; i < arrayHops.length; i++)
+//			System.out.println(" i " + i + "  Valor " + arrayHops[i]);
+////		}
 
 	}
 }

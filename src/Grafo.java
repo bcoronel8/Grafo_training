@@ -1,14 +1,10 @@
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Locale;
 import java.util.PriorityQueue;
 import java.util.Queue;
-import java.util.Scanner;
 import java.util.Stack;
 
 public class Grafo {
@@ -16,8 +12,9 @@ public class Grafo {
 	protected Integer[][] matrizAdy;
 	protected List<Arista>[] listaAdy;
 	protected int cantNodos;
-	protected int cantAristas;
-	public int[] precedentes;
+	protected int cantAristas; // no es necesario realmente
+	public int[] precedentes;// esto corresponderia a una class dijktra
+	private final int INFINITO = 8000;
 
 	public Grafo(int cantNodos, int cantAristas) {
 
@@ -28,7 +25,7 @@ public class Grafo {
 		matrizAdy = new Integer[cantNodos][cantNodos];
 		for (int i = 0; i < cantNodos; i++) {
 			for (int j = 0; j < cantNodos; j++) {
-				this.matrizAdy[i][j] = 8000;
+				this.matrizAdy[i][j] = INFINITO;
 			}
 		}
 
@@ -41,16 +38,6 @@ public class Grafo {
 	public void agregarAristaMat(int origen, int destino, int peso) {
 		this.matrizAdy[origen - 1][destino - 1] = peso;
 
-	}
-
-	public void cargarMatrizArchivo(String pathFile) throws FileNotFoundException {
-		Scanner scanner = new Scanner(new File(pathFile));
-		scanner.useLocale(Locale.ENGLISH);
-		int cantElementos = scanner.nextInt();
-		for (int i = 0; i < cantElementos; i++) {
-			this.matrizAdy[scanner.nextInt()][scanner.nextInt()] = 1;
-		}
-		scanner.close();
 	}
 
 	public void recorrido_DFS(int nodoActual) {
@@ -66,10 +53,7 @@ public class Grafo {
 
 		while (!pilaDeNodos.isEmpty()) {
 			nodoReco = pilaDeNodos.peek();
-			if (visitoTodosLosAdy(nodoReco, arrayVisitados)) {
-				pilaDeNodos.pop();
-
-			}
+			pilaDeNodos.pop();
 
 			if (arrayVisitados[nodoReco] == false) {
 				arrayVisitados[nodoReco] = true;
@@ -82,29 +66,17 @@ public class Grafo {
 				nodoAdyacente = iterador.next().nodoDestino;
 				if (arrayVisitados[nodoAdyacente] == false) {
 					pilaDeNodos.push(nodoAdyacente);
-
 				}
 			}
-
 		}
 
-	}
-
-	private boolean visitoTodosLosAdy(int nodoARecorrer, boolean[] visitados) {
-
-		Iterator<Arista> iterador = this.listaAdy[nodoARecorrer - 1].iterator();
-		while (iterador.hasNext()) {
-			if (visitados[iterador.next().getNodoDestino()] == false)
-				return false;
-		}
-		return true;
 	}
 
 	public Integer[] recorrido_BFS(int nodoActual) {
 
 		Queue<Integer> colaDeNodos = new LinkedList<Integer>();
 		Integer[] arrayDeHops = new Integer[this.cantNodos + 1];
-		Arrays.fill(arrayDeHops, 5000);
+		Arrays.fill(arrayDeHops, INFINITO);
 
 		int distancia = 0;
 
@@ -113,32 +85,29 @@ public class Grafo {
 
 		while (!colaDeNodos.isEmpty()) {
 
-			nodoActual = colaDeNodos.peek();
-			colaDeNodos.poll();
+			nodoActual = colaDeNodos.poll();
 			System.out.println("Nodo   " + nodoActual);
 			Iterator<Arista> iterador = this.listaAdy[nodoActual - 1].iterator();
 			while (iterador.hasNext()) {
 				int nodoReco = iterador.next().getNodoDestino();
-				if (arrayDeHops[nodoReco] == 5000) {
+				if (arrayDeHops[nodoReco] == INFINITO) {
 
 					colaDeNodos.add(nodoReco);
 					arrayDeHops[nodoReco] = arrayDeHops[nodoActual] + 1;
 				}
 			}
-
 		}
-
 		return arrayDeHops;
 	}
 
 /////////////////////////////////////////////////////////////
 	public int[] dijkstra(int nodoInicio) {
 
-		int[] distancias = new int[this.cantNodos + 1];
+		int[] distancias = new int[this.cantNodos + 1];// Para tener indices mas claros
 		List<Integer> conjuntoSolucion = new ArrayList<Integer>();
 		PriorityQueue<DistanciaCosto> colaDistancias = new PriorityQueue<DistanciaCosto>(new comparaDistancias());
 		int w;
-		Arrays.fill(this.precedentes, nodoInicio);
+		Arrays.fill(this.precedentes, nodoInicio); /// Solo de precisar la construccion del camino
 
 		conjuntoSolucion.add(nodoInicio);
 		cargarDistancias(distancias, nodoInicio);
@@ -151,25 +120,29 @@ public class Grafo {
 
 			for (int i = 1; i < distancias.length; i++) {
 				if (!conjuntoSolucion.contains(i)) {
-					if (distancias[i] > (distancias[w] + this.matrizAdy[w - 1][i - 1])) {
+					if (distancias[i] > (distancias[w] + this.matrizAdy[w - 1][i - 1])) {/// Solo de precisar la
+																							/// construccion del camino
 						precedentes[i] = w;
 					}
-
 					distancias[i] = Math.min(distancias[i], distancias[w] + this.matrizAdy[w - 1][i - 1]);
 				}
 			}
-
-			cargarDistanciasCola(distancias, colaDistancias, conjuntoSolucion);
-
+			cargarDistanciasCola(distancias, colaDistancias, conjuntoSolucion); // Se vuelve a cargar la cola, con el
+																				// nuevo conjunto solucion
 		}
 
 		return distancias;
 	}
 
+	// Carga las distancias que no esten contenidas en el conjutno solucion a la
+	// cola
+	// En un tipo de dato DistanciaCosto.
+	// Si la cola tiene contenido, se la vacia y se carga con cada conjuntoSolucion
+	// nuevo
 	private void cargarDistanciasCola(int[] distancias, PriorityQueue<DistanciaCosto> colaDistancias,
 			List<Integer> conjuntoSolucion) {
 		if (!colaDistancias.isEmpty()) {
-			colaDistancias.removeAll(colaDistancias);
+			colaDistancias.clear();
 		}
 
 		for (int i = 1; i < distancias.length; i++) {
@@ -188,11 +161,8 @@ public class Grafo {
 
 /////////////////////////////////////////////////////////////	
 	public Integer[][] floyd() {
-		Integer[][] matrizFx = this.matrizAdy;
-
-		for (int i = 0; i < matrizFx.length; i++) {
-			matrizFx[i][i] = 0;
-		}
+		Integer[][] matrizFx = new Integer[this.cantNodos][this.cantNodos];
+		clonarMatrizFloyd(matrizFx, this.matrizAdy);
 
 		for (int k = 0; k < matrizFx.length; k++) {
 			for (int i = 0; i < matrizFx.length; i++) {
@@ -203,6 +173,19 @@ public class Grafo {
 		}
 
 		return matrizFx;
+	}
+
+	// Copia la matriz, y setea 0 en DP
+	private void clonarMatrizFloyd(Integer[][] matrizFx, Integer[][] matrizAdy2) {
+		for (int i = 0; i < matrizFx.length; i++) {
+			for (int j = 0; j < matrizFx.length; j++) {
+				if (i == j) {
+					matrizFx[i][j] = 0;
+				} else {
+					matrizFx[i][j] = matrizAdy2[i][j];
+				}
+			}
+		}
 	}
 
 /////////////////////////////////////////////////////////////
@@ -223,12 +206,14 @@ public class Grafo {
 		return matrizAx;
 	}
 
+	/// Convierte Matriz a Booleana, False en DP
+	// Y true si hay contenido que no sea "infinito" en la matriz
 	private void convierteMatrizBooleana(boolean[][] matrizAx) {
 		for (int i = 0; i < matrizAx.length; i++) {
 			for (int j = 0; j < matrizAx[i].length; j++) {
 				if (i == j)
 					matrizAx[i][j] = false;
-				else if (this.matrizAdy[i][j] != 800)
+				else if (this.matrizAdy[i][j] != INFINITO)
 					matrizAx[i][j] = true;
 				else
 					matrizAx[i][j] = false;
